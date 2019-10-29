@@ -6,6 +6,7 @@ import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,6 +15,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.mapper.Wrapper;
 import com.ptw.pojo.Question;
 import com.ptw.service.QuestionService;
 import com.ptw.utils.PTWResult;
@@ -25,8 +27,12 @@ public class QuestionController {
 	@Autowired
 	private QuestionService qService;
 	@RequestMapping(value = "/question/list")
-	public PTWResult select(String category) {
-		List<Question> db_list = qService.selectList(new EntityWrapper<Question>().eq("category", category));
+	public PTWResult select(String category,String searchName) {
+		Wrapper<Question> wrapper = new EntityWrapper<Question>().eq("category", category);
+		if(!StringUtils.equals("undefined", searchName)) {
+			wrapper.like("name", searchName);
+		}
+		List<Question> db_list = qService.selectList(wrapper);
 		for (Question question : db_list) {
 			String currentName = question.getName();
 			if(question.getType() == 2) {
@@ -38,6 +44,10 @@ public class QuestionController {
 					currentName = currentName.replace(item, "____________");
 				}
 				question.setName(currentName);
+			}else if(question.getType()==3) {
+				String answer = question.getAnswer();
+				String replaceAll = answer.replaceAll("\\\\n", "<br/>");
+				question.setAnswer(replaceAll);
 			}
 		}
 		return PTWResult.ok(db_list);
@@ -71,10 +81,11 @@ public class QuestionController {
 		}
 	}
 	@RequestMapping("/question/save")
-	public PTWResult save(String dynamicTags,String name,String category,Integer type,String answer) {
+	public PTWResult save(String dynamicTags,String name,String category,Integer type,String answer,String remark) {
 		try {
 			Question qa = new Question();
 			qa.setName(name).setCreateTime(new Date()).setUpdateTime(new Date()).setCategory(category).setType(type);
+			if(StringUtils.isNotBlank(remark)) qa.setRemark(remark);
 			//填空题
 			if(type == 2) {
 				String[] split = dynamicTags.split(",");
@@ -102,8 +113,20 @@ public class QuestionController {
 				obj.put("item", answer);
 				an.add(obj);
 				qa.setOptions(arr.toJSONString()).setAnswer(an.toJSONString());
+			}else if(type==3) {//简答题
+				JSONArray arr = new JSONArray();
+				JSONObject obj = new JSONObject();
+				obj.put("item", answer);
+				arr.add(obj);
+				qa.setAnswer(arr.toJSONString());
 			}
-			
+			List<Question> db_list = qService.selectList(new EntityWrapper<Question>().eq("category", category).orderBy("sort", false));
+			Integer sort = db_list.get(0).getSort();
+			if(sort ==null) {
+				qa.setSort(1);
+			}else {
+				qa.setSort((sort+1));
+			}
 			qService.insert(qa);
 			return PTWResult.ok();
 		} catch (Exception e) {
@@ -113,5 +136,9 @@ public class QuestionController {
 	private void add(Object put) {
 		// TODO Auto-generated method stub
 		
+	}
+	public static void main(String[] args) {
+		String s = " \n aaaa";
+		System.out.println(s.replaceAll("\\n", ""));
 	}
 }

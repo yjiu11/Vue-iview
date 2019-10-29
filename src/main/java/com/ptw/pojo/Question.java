@@ -66,4 +66,14 @@ public class Question implements Serializable {
      */
     @TableField("update_time")
     private Date updateTime;
+    /**
+     * 	排序
+     */
+    @TableField("sort")
+    private Integer sort;
+    /**
+     * 	解析
+     */
+    @TableField("remark")
+    private String remark;
 }
