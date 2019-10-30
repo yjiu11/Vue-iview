@@ -1,7 +1,5 @@
 package com.ptw.rest;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
@@ -27,10 +25,13 @@ public class QuestionController {
 	@Autowired
 	private QuestionService qService;
 	@RequestMapping(value = "/question/list")
-	public PTWResult select(String category,String searchName) {
+	public PTWResult select(String category,String searchName,String select_type) {
 		Wrapper<Question> wrapper = new EntityWrapper<Question>().eq("category", category);
 		if(!StringUtils.equals("undefined", searchName)) {
 			wrapper.like("name", searchName);
+		}
+		if(StringUtils.isNotBlank(select_type)) {
+			wrapper.eq("type", select_type);
 		}
 		List<Question> db_list = qService.selectList(wrapper);
 		for (Question question : db_list) {
