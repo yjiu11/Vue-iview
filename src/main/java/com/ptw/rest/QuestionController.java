@@ -4,6 +4,7 @@ import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -82,10 +83,10 @@ public class QuestionController {
 		}
 	}
 	@RequestMapping("/question/save")
-	public PTWResult save(String dynamicTags,String name,String category,Integer type,String answer,String remark) {
+	public PTWResult save(String dynamicTags,String name,String category,Integer type,String answer,String remark,String url) {
 		try {
 			Question qa = new Question();
-			qa.setName(name).setCreateTime(new Date()).setUpdateTime(new Date()).setCategory(category).setType(type);
+			qa.setName(name).setCreateTime(new Date()).setUpdateTime(new Date()).setCategory(category).setType(type).setUrl(url);
 			if(StringUtils.isNotBlank(remark)) qa.setRemark(remark);
 			//填空题
 			if(type == 2) {
@@ -122,11 +123,13 @@ public class QuestionController {
 				qa.setAnswer(arr.toJSONString());
 			}
 			List<Question> db_list = qService.selectList(new EntityWrapper<Question>().eq("category", category).orderBy("sort", false));
-			Integer sort = db_list.get(0).getSort();
-			if(sort ==null) {
-				qa.setSort(1);
-			}else {
-				qa.setSort((sort+1));
+			if(CollectionUtils.isNotEmpty(db_list)){
+				Integer sort = db_list.get(0).getSort();
+				if(sort ==null) {
+					qa.setSort(1);
+				}else {
+					qa.setSort((sort+1));
+				}
 			}
 			qService.insert(qa);
 			return PTWResult.ok();

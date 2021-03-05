@@ -51,6 +51,8 @@ public class Question implements Serializable {
      */
     @TableField("answer")
     private String answer;
+    @TableField("url")
+    private String url;
     /**
      * 分类
      */
