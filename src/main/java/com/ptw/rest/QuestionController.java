@@ -137,6 +137,65 @@ public class QuestionController {
 			return PTWResult.build(500, e.getMessage());
 		}
 	}
+	@RequestMapping("/question/delete")
+	public PTWResult delete(Integer id) {
+		qService.deleteById(id);
+		return PTWResult.ok();
+	}
+	@RequestMapping("/question/update")
+	public PTWResult update(Integer id,String dynamicTags,String name,String category,Integer type,String answer,String remark,String url) {
+		try {
+			Question qa = new Question();
+			qa.setName(name).setCreateTime(new Date()).setUpdateTime(new Date()).setCategory(category).setType(type).setUrl(url).setId(id).setRemark(remark);
+			//填空题
+			if(type == 2) {
+				String[] split = dynamicTags.split(",");
+				//[{"item":"DBMS数据库管理系统"}]
+				JSONArray arr = new JSONArray();
+				for (String tag : split) {
+					JSONObject obj = new JSONObject();
+					obj.put("item", tag);
+					arr.add(obj);
+				}
+				qa.setAnswer(arr.toJSONString());
+			}else if(type ==1) {//单选题
+				String[] split = dynamicTags.split(",");
+				//options [{"item":"20世纪50年代","value":"A"},{"item":"20世纪40年代前","value":"B"},{"item":"20世纪90年代后","value":"C"}]
+				JSONArray arr = new JSONArray();
+				for (int i=0;i<split.length;i++) {
+					JSONObject obj = new JSONObject();
+					obj.put("item", split[i]);
+					obj.put("value", choose[i]);
+					arr.add(obj);
+				}
+				//answer
+				JSONArray an = new JSONArray();
+				JSONObject obj = new JSONObject();
+				obj.put("item", answer);
+				an.add(obj);
+				qa.setOptions(arr.toJSONString()).setAnswer(an.toJSONString());
+			}else if(type==3) {//简答题
+				JSONArray arr = new JSONArray();
+				JSONObject obj = new JSONObject();
+				obj.put("item", answer);
+				arr.add(obj);
+				qa.setAnswer(arr.toJSONString());
+			}
+			/*List<Question> db_list = qService.selectList(new EntityWrapper<Question>().eq("category", category).orderBy("sort", false));
+			if(CollectionUtils.isNotEmpty(db_list)){
+				Integer sort = db_list.get(0).getSort();
+				if(sort ==null) {
+					qa.setSort(1);
+				}else {
+					qa.setSort((sort+1));
+				}
+			}*/
+			qService.updateById(qa);
+			return PTWResult.ok();
+		} catch (Exception e) {
+			return PTWResult.build(500, e.getMessage());
+		}
+	}
 	private void add(Object put) {
 		// TODO Auto-generated method stub
 		
